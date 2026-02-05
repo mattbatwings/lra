@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+:root {
+  --default-border: #e5e7eb;
+}
+
+/* dark theme border color */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --default-border: #374151;
+  }
+}
+
+@layer base {
+  *,:before,:after {
+    box-sizing: border-box;
+    border-style: solid;
+    border-color: var(--default-border);
+  }
+}
+
+::selection {
+  background: #cbd5e1;
+  color: #0f172a;
+}
+
+.sidebar-scroll {
+  overflow: hidden;
+}
+
+.sidebar-scroll-inner {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 17px;
+  box-sizing: content-box;
+  scrollbar-width: thin;
+  scrollbar-color: #9ca3af transparent;
+  scrollbar-gutter: stable both-edges;
+}
+
+.dark .sidebar-scroll-inner {
+  scrollbar-color: #6b7280 transparent;
+}
+
+.sidebar-scroll-inner::-webkit-scrollbar {
+  width: 12px;
+}
+
+.sidebar-scroll-inner::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scroll-inner::-webkit-scrollbar-thumb {
+  background: #9ca3af;
+  border-radius: 9999px;
+}
+
+.dark .sidebar-scroll-inner::-webkit-scrollbar-thumb {
+  background: #6b7280;
+}

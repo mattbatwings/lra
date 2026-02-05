@@ -1,0 +1,44 @@
+{
+  "name": "nextjs-github-pages",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "images": "tsx scripts/prefetch-previews.ts",
+    "build": "tsx scripts/build-sw.ts && next build",
+    "clean": "tsx scripts/clean.ts",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "file:transformers/huggingface-transformers-3.8.1.tgz",
+    "@next/third-parties": "^16.1.1",
+    "@tanstack/react-virtual": "^3.13.18",
+    "js.foresight": "^3.4.0",
+    "next": "^16.1.1",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-markdown": "^10.1.0",
+    "react-pdf": "^10.3.0",
+    "remark-gfm": "^4.0.1",
+    "sharp": "^0.34.4",
+    "tsx": "^4.20.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "@types/node": "^25.0.3",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "baseline-browser-mapping": "^2.9.14",
+    "eslint": "^9.39.2",
+    "eslint-config-next": "^16.1.1",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^5.9.3"
+  },
+  "browserslist": [
+    "last 2 Chrome versions",
+    "last 2 Firefox versions",
+    "last 2 Edge versions",
+    "last 2 Safari versions"
+  ]
+}
