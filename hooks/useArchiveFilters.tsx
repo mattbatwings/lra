@@ -124,6 +124,18 @@ export function useArchiveFilters({
   const [dictionarySort, setDictionarySort] = useState<"az" | "updated">("az");
   const skipUrlSyncRef = useRef(true);
   const scrollSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollToTop = () => {
+    if (typeof window === "undefined") return;
+    const root = document.documentElement;
+    const body = document.body;
+    const prevRootBehavior = root.style.scrollBehavior;
+    const prevBodyBehavior = body.style.scrollBehavior;
+    root.style.scrollBehavior = "auto";
+    body.style.scrollBehavior = "auto";
+    window.scrollTo(0, 0);
+    root.style.scrollBehavior = prevRootBehavior;
+    body.style.scrollBehavior = prevBodyBehavior;
+  };
 
   const applyFilterState = (state: FilterState) => {
     setQ(state.q);
@@ -497,6 +509,7 @@ export function useArchiveFilters({
   );
 
   const handleToggleTag = (tagName: string, rightClick: boolean) => {
+    scrollToTop();
     setTagState((prev) => {
       const cur = prev[tagName] || 0;
       const next = rightClick ? (cur === -1 ? 0 : -1) : cur === 1 ? 0 : 1;
@@ -537,7 +550,10 @@ export function useArchiveFilters({
     },
     tags: {
       mode: tagMode,
-      setMode: setTagMode,
+      setMode: (mode: "OR" | "AND") => {
+        scrollToTop();
+        setTagMode(mode);
+      },
       state: tagState,
       setState: setTagState,
       all: allTags,
@@ -548,8 +564,10 @@ export function useArchiveFilters({
       selected: selectedChannels,
       setSelected: setSelectedChannels,
       counts: channelCounts,
-      toggle: (code: string) =>
-        setSelectedChannels((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code])),
+      toggle: (code: string) => {
+        scrollToTop();
+        setSelectedChannels((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]));
+      },
     },
     authors: {
       query: authorQuery,
