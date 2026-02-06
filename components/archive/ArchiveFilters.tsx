@@ -113,7 +113,7 @@ export function ArchiveFilters({
                         key={ch.code}
                         title={ch.description}
                         className={clsx(
-                          "grid w-full cursor-pointer grid-cols-[auto,1fr] items-start gap-x-3 gap-y-1 rounded-md border px-2 py-2 text-xs focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-1 dark:focus-within:ring-offset-gray-900",
+                          "grid w-full cursor-pointer grid-cols-[auto,1fr] items-start gap-x-3 gap-y-1 rounded-md border px-2 py-2 text-xs",
                           selected
                             ? "border-blue-500 bg-blue-50 text-gray-900 dark:border-blue-400 dark:bg-blue-900/40 dark:text-white"
                             : "border-gray-200 bg-white text-gray-800 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-100",
