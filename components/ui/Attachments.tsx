@@ -18,7 +18,7 @@ export function AttachmentCard({
 }) {
   const href = att.path && att.canDownload ? att.path : att.url;
   const sourceURL = att.path || att.url;
-  const schematicURL = att.litematic && sourceURL ? `https://storagetech2.org/renderer?url=${sourceURL}` : null;
+  const schematicURL = att.litematic && sourceURL ? `https://llamamc.org/renderer?url=${sourceURL}` : null;
   const videoFilePattern = /\.(mp4|webm|m3u8|mpd)$/i;
   const isVideo = !att.youtube && (att.contentType?.startsWith("video/") || videoFilePattern.test(att.name));
   const kind = att.youtube
