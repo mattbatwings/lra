@@ -1,4 +1,5 @@
 import { extractFiltersFromSearch, serializeListParam } from "./filtering";
+import { siteConfig } from "./siteConfig";
 import { type SortKey } from "./types";
 
 type ArchiveFilters = {
@@ -144,7 +145,15 @@ const buildArchiveFiltersHref = (filters: ArchiveFilters, pathname?: string) => 
   if (filters.selectedAuthors.length) sp.set("authors", serializeListParam(filters.selectedAuthors));
 
   const query = sp.toString();
-  const currentPathname = pathname ?? window.location.pathname;
+  const currentPathname = (() => {
+    const windowPath = window.location.pathname;
+    if (!pathname) return windowPath;
+    if (pathname === windowPath) return pathname;
+    const basePath = siteConfig.basePath || "";
+    if (!basePath || pathname.startsWith(basePath)) return pathname;
+    const withLeadingSlash = pathname.startsWith("/") ? pathname : `/${pathname}`;
+    return `${basePath}${withLeadingSlash}`;
+  })();
   const next = query ? `${currentPathname}?${query}` : currentPathname;
   const current = `${currentPathname}${window.location.search}`;
   return { next, current };
