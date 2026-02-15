@@ -33,7 +33,7 @@ const normalizeBasePath = (value: string) => {
 // Deployment configuration lives here rather than env variables.
 const siteOrigin = "https://mattbatwings.github.io";
 // Set to "/viewer" (or "" for root) depending on where the site is hosted.
-const basePath = normalizeBasePath("lrs");
+const basePath = normalizeBasePath("lra");
 const assetPrefix = basePath || undefined;
 const siteUrl = `${siteOrigin.replace(/\/+$/, "")}${basePath || ""}`;
 
