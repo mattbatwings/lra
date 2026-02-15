@@ -9,16 +9,28 @@ import { PillarCard } from "@/components/home/PillarCard";
 export default function Home() {
   const pillars = [
     {
-      title: "A curated archive",
+      title: "A Curated Archive",
       body: "A list of useful logical redstone designs and creations submitted by community members.",
       href: "/archives",
       cta: "Browse the archive",
     },
     {
-      title: "Living dictionary",
+      title: "Living Dictionary",
       body: "An ever-growing dictionary of terms and concepts related to logical redstone.",
       href: "/dictionary",
       cta: "Open the dictionary",
+    },
+    {
+      title: "Archive Downloader Mod",
+      body: "A mod that allows you to browse and download Logical Redstone and other archives directly in-game.",
+      href: "/mods-and-tools",
+      cta: "See the recommendations",
+    },
+    {
+      title: "Discord Community",
+      body: "Learn with peers, ask questions, and share new circuits in our Discord.",
+      href: siteConfig.discordInviteUrl ?? "#",
+      cta: "Join the Discord",
     },
   ];
 
