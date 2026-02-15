@@ -20,6 +20,18 @@ export default function Home() {
       href: "/dictionary",
       cta: "Open the dictionary",
     },
+    {
+      title: "Mods and tools",
+      body: "Discover the best mods and tools to enhance your Minecraft experience and streamline your building process.",
+      href: "/mods-and-tools",
+      cta: "See the recommendations",
+    },
+    {
+      title: "Community-first",
+      body: "Join our discord to learn, share new designs, and get in touch with our community",
+      href: siteConfig.discordInviteUrl ?? "#",
+      cta: "Join the Discord",
+    },
   ];
 
   return (
