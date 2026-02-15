@@ -23,8 +23,8 @@ export default function Home() {
     {
       title: "Archive Downloader Mod",
       body: "A mod that allows you to browse and download Logical Redstone and other archives directly in-game.",
-      href: "/mods-and-tools",
-      cta: "See the recommendations",
+      href: "https://modrinth.com/mod/archive-downloader",
+      cta: "View on Modrinth",
     },
     {
       title: "Discord Community",
