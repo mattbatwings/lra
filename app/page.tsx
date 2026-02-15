@@ -59,13 +59,11 @@ export default function Home() {
           </div> */}
           <div className="px-6 py-8">
             <p className="text-xs font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-300">
-              Welcome to LlamaMC Archive
+              Welcome to the Logical Redstone Archive
             </p>
-            <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">The community for storage innovators</h1>
+            <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">The community for redstone computer nerds</h1>
             <p className="mt-3 max-w-3xl text-base leading-relaxed text-gray-900 dark:text-gray-200">
-              This is an example archive website built with the LlamaMC Archive Template. Feel free to explore the
-              archive and dictionary to see how the template works, and imagine what you could build with your own
-              archive!
+              This is a free, public archive website built with the LlamaMC Archive Template.
             </p>
           </div>
         </section>
@@ -81,22 +79,6 @@ export default function Home() {
             {pillars.map((pillar) => (
               <PillarCard key={pillar.title} pillar={pillar} />
             ))}
-          </div>
-        </section>
-
-        <section className="mt-12 grid gap-6 lg:grid-cols-[1.2fr,0.8fr]">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-2xl font-semibold sm:text-3xl">Built by the community, for the community</h2>
-            </div>
-          </div>
-
-          <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-
-            <p className="text-base leading-relaxed text-gray-900 dark:text-gray-200">
-                The LlamaMC Archive Template is an open-source project developed by the Llama Collective, designed to
-                empower communities to create and share their own archives of Minecraft storage technologies.
-            </p>
           </div>
         </section>
       </main>
