@@ -18,18 +18,28 @@ export function AttachmentCard({
 }) {
   const href = att.path && att.canDownload ? att.path : att.url;
   const sourceURL = att.path || att.url;
-  const schematicURL = att.litematic && sourceURL ? `https://llamamc.org/renderer?url=${sourceURL}` : null;
+  const schematicExtensions = [
+    "litematic",
+    "schematic",
+    "schem",
+    "nbt",
+  ];
+  const isLitematic = att.name.toLowerCase().endsWith(".litematic");
+  const isSchematic = schematicExtensions.some((ext) => att.name.toLowerCase().endsWith(`.${ext}`));
+  const schematicURL = isSchematic && sourceURL ? `https://llamamc.org/renderer?url=${sourceURL}` : null;
   const videoFilePattern = /\.(mp4|webm|m3u8|mpd)$/i;
   const isVideo = !att.youtube && (att.contentType?.startsWith("video/") || videoFilePattern.test(att.name));
   const kind = att.youtube
     ? "YouTube"
-    : att.litematic
+    : isLitematic
       ? "Litematic"
-      : att.wdl
-        ? "WDL"
-        : isVideo
-          ? "Video"
-          : att.contentType?.toUpperCase() || "FILE";
+      : isSchematic
+        ? "Schematic"
+        : att.wdl
+          ? "WDL"
+          : isVideo
+            ? "Video"
+            : att.contentType?.toUpperCase() || "FILE";
   const ext = (att.name?.split(".")?.pop() || "").toUpperCase();
   const title = att.youtube?.title || att.name;
   const embedSrc = att.youtube ? getYouTubeEmbedURL(att.url) : null;
@@ -39,6 +49,8 @@ export function AttachmentCard({
   const pdfSource = isPdf ? sourceURL : null;
   const imageForView: ArchiveImage = att;
   const [showSchematic, setShowSchematic] = useState(false);
+
+  const schemInfo = att.schematic || att.litematic;
   return (
     <>
       <article className="flex h-full flex-col overflow-hidden rounded-xl border bg-white dark:border-gray-800 dark:bg-gray-900">
@@ -78,19 +90,19 @@ export function AttachmentCard({
           {!att.youtube && <div className="text-[11px] text-gray-500 wrap-break-word">{att.name}</div>}
           {att.description && <div className="text-xs text-gray-700 dark:text-gray-300 wrap-break-word">{att.description}</div>}
 
-          {att.litematic ? (
+          {schemInfo ? (
             <ul className="mt-1 text-xs text-gray-600 dark:text-gray-300">
-              {att.litematic.version && (
+              {schemInfo.version && (
                 <li>
-                  <span className="font-medium">Version:</span> {att.litematic.version}
+                  <span className="font-medium">Version:</span> {schemInfo.version}
                 </li>
               )}
-              {att.litematic.size && (
+              {schemInfo.size && (
                 <li>
-                  <span className="font-medium">Size:</span> {att.litematic.size}
+                  <span className="font-medium">Size:</span> {schemInfo.size}
                 </li>
               )}
-              {att.litematic.error && <li className="text-red-600">{att.litematic.error}</li>}
+              {schemInfo.error && <li className="text-red-600">{schemInfo.error}</li>}
             </ul>
           ) : null}
           {att.wdl ? (
@@ -124,7 +136,7 @@ export function AttachmentCard({
           ) : null}
 
           <div className="mt-auto flex flex-wrap items-center gap-2 pt-2">
-            {att.litematic ? (
+            {isSchematic ? (
               <button
                 type="button"
                 onClick={() => schematicURL && setShowSchematic(true)}
