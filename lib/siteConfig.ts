@@ -31,31 +31,31 @@ const normalizeBasePath = (value: string) => {
 };
 
 // Deployment configuration lives here rather than env variables.
-const siteOrigin = "https://llamamc.org";
+const siteOrigin = "https://mattbatwings.github.io";
 // Set to "/viewer" (or "" for root) depending on where the site is hosted.
-const basePath = normalizeBasePath("website-template");
+const basePath = normalizeBasePath("lrs");
 const assetPrefix = basePath || undefined;
 const siteUrl = `${siteOrigin.replace(/\/+$/, "")}${basePath || ""}`;
 
 export const siteConfig: SiteConfig = {
-  siteName: "Example Archive",
-  siteDescription: "Example archive website built with the LlamaMC Archive Template.",
+  siteName: "Logical Redstone Archive",
+  siteDescription: "An archive of useful logical redstone devices.",
   pageDescriptions: {
-    archives: "Explore an archive of example designs and creations.",
-    dictionary: "An example dictionary of terms and concepts.",
+    archives: "Explore an archive of useful logical redstone devices.",
+    dictionary: "Living Dictionary",
     dictionaryExampleEntry: "This is an example dictionary entry used for demonstration purposes.",
   },
-  logoSrc: `${basePath}/logo.jpg`,
+  logoSrc: `${basePath}/lra.png`,
   basePath,
   assetPrefix,
   siteOrigin,
   siteUrl,
   archiveRepo: {
-    owner: "Llama-Collective",
-    repo: "demo-archive",
+    owner: "mattbatwings",
+    repo: "Logical-Redstone-Archive",
     branch: "main",
   },
   lfsExtensions: ["mp4", "bin", "zip"],
-  repositoryUrl: "https://github.com/Llama-Collective/demo-archive",
-  discordInviteUrl: "https://discord.gg/J2M6fHYQnY",
+  repositoryUrl: "https://github.com/mattbatwings/Logical-Redstone-Archive",
+  discordInviteUrl: "https://discord.gg/r7FmnacNas",
 };
