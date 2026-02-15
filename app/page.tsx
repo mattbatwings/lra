@@ -10,13 +10,13 @@ export default function Home() {
   const pillars = [
     {
       title: "A curated archive",
-      body: "A list of designs and creations submitted by community members, carefully curated for quality and innovation.",
+      body: "A list of useful logical redstone designs and creations submitted by community members.",
       href: "/archives",
       cta: "Browse the archive",
     },
     {
       title: "Living dictionary",
-      body: "An ever-growing dictionary of terms and concepts related to Minecraft technology.",
+      body: "An ever-growing dictionary of terms and concepts related to logical redstone.",
       href: "/dictionary",
       cta: "Open the dictionary",
     },
@@ -28,7 +28,7 @@ export default function Home() {
     },
     {
       title: "Community-first",
-      body: "Learn with peers, ask questions, and share new breakthroughs in our Discord.",
+      body: "Join our discord to learn, share new designs, and get in touch with our community",
       href: siteConfig.discordInviteUrl ?? "#",
       cta: "Join the Discord",
     },
