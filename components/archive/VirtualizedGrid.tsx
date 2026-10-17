@@ -86,7 +86,8 @@ export function VirtualizedGrid({ enabled, posts, sortKey, onNavigate, globalTag
     overscan: 2,
     scrollMargin,
     useFlushSync: false,
-    enabled
+    enabled,
+    initialOffset: 0,
   });
 
   if (!posts.length) return null;

@@ -12,8 +12,9 @@ import { getEffectiveStyle } from "@/lib/utils/styles";
 import { truncateStringWithEllipsis } from "@/lib/utils/strings";
 import { transformOutputWithReferencesForSocials } from "@/lib/utils/references";
 import { getPreviewByCode } from "@/lib/previews";
-import Head from "next/head";
-import { assetURL } from "@/lib/github";
+import { PageJsonLd } from "@/components/seo/PageJsonLd";
+import { createArchiveArticleJsonLd } from "@/lib/jsonLd";
+import { getAuthorName } from "@/lib/utils/authors";
 
 export const dynamic = "force-static";
 
@@ -45,13 +46,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     title: `${match.entry.name} | ${siteConfig.siteName}`,
     description,
     alternates: {
-      canonical: `/archives/${match.slug}`,
+      canonical: `/archives/${match.slug}/`,
     },
     openGraph: {
       type: "article",
       title: `${match.entry.name} | ${siteConfig.siteName}`,
       description,
-      url: `/archives/${match.slug}`,
+      url: `/archives/${match.slug}/`,
       images: ogImage
         ? [
           {
@@ -77,6 +78,22 @@ export default async function PostPage({ params }: Params) {
   const payload = await fetchPostWithArchive(slug);
   if (!payload) return notFound();
   const { archive, post: match, data } = payload;
+  const preview = getPreviewByCode(match.entry.codes[0]);
+  const description = truncateStringWithEllipsis((data.records["description"] ? transformOutputWithReferencesForSocials(submissionRecordToMarkdown(data.records["description"], getEffectiveStyle("description", archive.config.postStyle, data.styles)), data.references) : '') || `Archive entry ${match.entry.codes[0]} from ${match.channel.name}`, 200);
+  const title = `${match.entry.name} | ${siteConfig.siteName}`;
+  const authorNames = data.authors?.filter((author) => !author.dontDisplay).map(getAuthorName) ?? [];
+  const archivePostJsonLd = createArchiveArticleJsonLd({
+    slug: match.slug,
+    title,
+    description,
+    imagePath: preview?.localPath,
+    authors: authorNames.length ? authorNames : match.entry.authors,
+    tags: data.tags?.map((tag) => tag.name) ?? match.entry.tags,
+    publishedAt: data.timestamp ?? data.archivedAt ?? match.entry.archivedAt,
+    modifiedAt: data.updatedAt ?? match.entry.updatedAt,
+    channelName: match.channel.name,
+    categoryName: match.channel.category,
+  });
   const globalTags = archive.config.globalTags?.length ? archive.config.globalTags : DEFAULT_GLOBAL_TAGS;
   const dictionary = await fetchDictionaryIndex();
   const dictionaryTooltips: Record<string, string> = {};
@@ -86,6 +103,7 @@ export default async function PostPage({ params }: Params) {
   });
   return (
     <>
+      <PageJsonLd data={archivePostJsonLd} />
       <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-4 pb-16 pt-8 lg:px-6">
         <PostNav prefetch={true} />
         <PostContent

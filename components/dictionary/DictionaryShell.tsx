@@ -19,8 +19,9 @@ import { filterDictionaryEntries } from "@/lib/filtering";
 import { disableLiveFetch } from "@/lib/runtimeFlags";
 import { type IndexedDictionaryEntry } from "@/lib/types";
 import { siteConfig } from "@/lib/siteConfig";
-import { DictionaryCard } from "../ui/LinkHelpers";
 import { buildDictionaryUrl, getDictionarySlugInfo } from "@/lib/utils/urls";
+import { VirtualizedDictionaryGrid, CARD_HEIGHT } from "./VirtualizedDictionaryGrid";
+import { DictionaryCard } from "@/components/ui/LinkHelpers";
 import { normalize } from "@/lib/utils/strings";
 import { ensureEmbeddingsLoaded, getScores } from "@/lib/semanticSearch";
 
@@ -30,6 +31,8 @@ type Props = {
 };
 
 const DICTIONARY_EMBEDDINGS_KEY = "dictionary-embeddings";
+
+let hasHydratedDictionaryShell = false;
 
 const getEntriesUpdatedAt = (list: IndexedDictionaryEntry[]) =>
   list.reduce((max, entry) => Math.max(max, entry.index.updatedAt ?? 0), 0);
@@ -55,6 +58,7 @@ export function DictionaryShell({ entries, initialActiveEntry = null }: Props) {
   const [semanticSearch, setSemanticSearch] = useState<{ query: string; scoreById: Record<string, number> } | null>(null);
   const [semanticForceDisabled, setSemanticForceDisabled] = useState(false);
   const [aiWorkerRequested, setAiWorkerRequested] = useState(false);
+  const [hydrated, setHydrated] = useState(hasHydratedDictionaryShell);
   const [dictionarySearchFocused, setDictionarySearchFocused] = useState(false);
   const pendingQueryRef = useRef<string>("");
   const activeIdRef = useRef<string | null>(null);
@@ -87,6 +91,12 @@ export function DictionaryShell({ entries, initialActiveEntry = null }: Props) {
     return liveEntries.find((entry) => entry.index.id === slugEntryIndex.id) || { index: slugEntryIndex };
   }, [slugEntryIndex, liveEntries]);
   const modalEntry = activeMatchesSlug && active ? active : slugEntry;
+
+  useEffect(() => {
+    hasHydratedDictionaryShell = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHydrated(true);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -191,7 +201,10 @@ export function DictionaryShell({ entries, initialActiveEntry = null }: Props) {
           const currentUpdatedAt = getEntriesUpdatedAt(liveEntries);
           const nextUpdatedAt = getEntriesUpdatedAt(fresh.entries);
           const isSame = currentUpdatedAt === nextUpdatedAt && liveEntries.length === fresh.entries.length;
-          if (!isSame) setLiveEntriesOverride(fresh.entries);
+          if (!isSame) {
+            activeIdRef.current = null;
+            setLiveEntriesOverride(fresh.entries);
+          }
         })
         .catch(() => { });
     };
@@ -373,18 +386,41 @@ export function DictionaryShell({ entries, initialActiveEntry = null }: Props) {
       />
 
       <main className="mx-auto max-w-7xl px-4 pb-12 pt-6">
-        <div className="mb-3 text-sm text-gray-600 dark:text-gray-300">Showing {filtered.length} of {liveEntries.length} terms • Sorted {sort === "az" ? "A to Z" : "by updated time"}</div>
-
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((entry) => (
-            <DictionaryCard
-              key={entry.index.id}
-              entry={entry}
-              onOpen={openEntry}
-              aiScore={aiRecommendedScores[normalize(entry.index.id)]}
-            />
-          ))}
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 dark:text-gray-300">
+          <span>Showing {filtered.length} of {liveEntries.length} terms</span>
+          <label className="flex items-center gap-2">
+            <span className="text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400">Sort</span>
+            <select
+              value={sort}
+              onChange={(e) => updateSort(e.target.value as "az" | "updated")}
+              className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm outline-none transition hover:border-gray-300 focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-600"
+              aria-label="Sort dictionary terms"
+            >
+              <option value="az">A to Z</option>
+              <option value="updated">Updated (newest)</option>
+            </select>
+          </label>
         </div>
+
+        {hydrated ? (
+          <VirtualizedDictionaryGrid
+            entries={filtered}
+            onOpen={openEntry}
+            aiRecommendedScores={aiRecommendedScores}
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((entry) => (
+              <div key={entry.index.id} style={{ height: CARD_HEIGHT }}>
+                <DictionaryCard
+                  entry={entry}
+                  onOpen={openEntry}
+                  aiScore={aiRecommendedScores[normalize(entry.index.id)]}
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </main>
 
       {modalEntry ? (

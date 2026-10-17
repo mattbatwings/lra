@@ -1,8 +1,8 @@
 'use client';
 
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { clsx } from "@/lib/utils/classNames";
-import { DEFAULT_BRANCH, DEFAULT_OWNER, DEFAULT_REPO, type SortKey } from "@/lib/types";
 import { prefetchDictionaryIndex, prefetchIndexAndLatestPosts } from "@/lib/archive";
 import { ForesightPrefetchLink } from "../ui/ForesightPrefetchLink";
 import { siteConfig } from "@/lib/siteConfig";
@@ -23,12 +23,27 @@ type HeaderFilters<TSort extends string> = {
   sort: HeaderSortFilters<TSort>;
 };
 
-type ArchiveHeaderFilters = HeaderFilters<SortKey>;
+type ArchiveHeaderFilters = HeaderFilters<"newest" | "oldest" | "archived" | "archivedOldest" | "az">;
 type DictionaryHeaderFilters = HeaderFilters<"az" | "updated">;
+
+function normalizePath(pathname: string) {
+  if (pathname.length > 1 && pathname.endsWith("/")) return pathname.slice(0, -1);
+  return pathname;
+}
+
+function isCurrentPage(currentPath: string, href: string) {
+  return normalizePath(currentPath) === normalizePath(href);
+}
+
+function isActivePath(currentPath: string, href: string) {
+  const normalizedHref = normalizePath(href);
+  if (normalizedHref === "/") return currentPath === "/";
+  return currentPath === normalizedHref || currentPath.startsWith(`${normalizedHref}/`);
+}
 
 type BaseProps = {
   siteName: string;
-  view: "home" | "archive" | "dictionary";
+  view: "home" | "faq" | "archive" | "dictionary";
   logoSrc: string;
   discordInviteUrl?: string;
   onLogoClick?(e: React.MouseEvent<HTMLAnchorElement, MouseEvent>): void;
@@ -37,6 +52,7 @@ type BaseProps = {
 
 type Props =
   | (BaseProps & { view: "home"; filters?: undefined })
+  | (BaseProps & { view: "faq"; filters?: undefined })
   | (BaseProps & {
       view: "archive";
       filters?: ArchiveHeaderFilters;
@@ -59,6 +75,8 @@ type Props =
     });
 
 export function HeaderBar(props: Props) {
+  const pathname = usePathname() ?? "/";
+  const currentPath = normalizePath(pathname);
   const { siteName, view, logoSrc, discordInviteUrl, onLogoClick, onArchiveClick } = props;
   const isArchive = view === "archive";
   const isDictionary = view === "dictionary";
@@ -73,8 +91,6 @@ export function HeaderBar(props: Props) {
   const handleDictionarySearchFocus = isDictionary ? (props.onDictionarySearchFocus ?? (() => {})) : () => {};
   const handleDictionarySearchBlur = isDictionary ? (props.onDictionarySearchBlur ?? (() => {})) : () => {};
   const dictionarySearchFocused = isDictionary ? (props.dictionarySearchFocused ?? false) : false;
-  const archiveSortKey = archiveFilters?.sort.key ?? "newest";
-  const dictionarySortValue = dictionaryFilters?.sort.key ?? "az";
   const searchValue = archiveFilters?.search.q ?? "";
   const dictionarySearchValue = dictionaryFilters?.search.q ?? "";
   const showAiIndicator = isArchive
@@ -84,52 +100,56 @@ export function HeaderBar(props: Props) {
       : false;
   const handleSearchChange = archiveFilters?.search.setQ ?? (() => {});
   const handleSearchCommit = archiveFilters?.search.commitSearch ?? (() => {});
-  const handleSortChange = archiveFilters?.sort.setKey ?? (() => {});
   const handleDictionarySearchChange = dictionaryFilters?.search.setQ ?? (() => {});
   const handleDictionarySearchCommit = dictionaryFilters?.search.commitSearch ?? (() => {});
-  const handleDictionarySortChange = dictionaryFilters?.sort.setKey ?? (() => {});
+  const navLinkBaseClass = "inline-flex items-center px-1 py-2 text-sm font-medium transition-colors";
+  const navLinkInactiveClass = "text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white";
+  const navLinkActiveClass = "text-gray-900 underline decoration-blue-600 decoration-2 underline-offset-[10px] dark:text-white dark:decoration-blue-400";
 
   return (
     <header className="top-0 z-20 bg-white/80 backdrop-blur border-b dark:bg-gray-900/80 sm:sticky">
-      <div className="mx-auto w-full px-2 py-3 sm:px-4 lg:px-6">
-        <div className="flex w-full flex-wrap items-center gap-2 pb-1 sm:gap-3">
-          <div className="flex shrink-0 items-center gap-3">
-            <ForesightPrefetchLink href="/" className="h-10 w-10" onClick={onLogoClick}>
-              <Image src={logoSrc} alt="Logo" width={40} height={40} className="h-10 w-10" />
-            </ForesightPrefetchLink>
-            <ForesightPrefetchLink href="/" onClick={onLogoClick}>
-            <div>
-              <div className="text-xl font-bold">
+      <div className="mx-auto w-full px-4 py-3 sm:px-6 lg:px-8">
+        <div className="flex w-full flex-col gap-2 pb-1 md:flex-row md:flex-wrap md:items-center md:gap-3">
+          <div data-site-navigation className="flex w-full items-center md:w-auto md:shrink-0">
+            <ForesightPrefetchLink
+              href="/"
+              onClick={onLogoClick}
+              className="mr-[0.3rem] flex items-center gap-[0.5rem] rounded-[0.45rem] px-[0.18rem] py-[0.08rem] hover:bg-[rgba(255,255,255,0.42)] dark:hover:bg-[rgba(89,114,152,0.32)]"
+            >
+              <Image
+                src={logoSrc}
+                alt={`${siteName} logo`}
+                width={36}
+                height={36}
+                className="h-9 w-9 rounded-[0.45rem] object-cover"
+              />
+              <span className="whitespace-nowrap text-[1rem] font-bold tracking-[0.015em] text-[#3e301f] sm:text-[1.08rem] dark:text-[#d7e4f8]">
                 {siteName}
-              </div>
-              <div className="text-xs text-gray-500">
-               
-                  {DEFAULT_OWNER}/{DEFAULT_REPO}@{DEFAULT_BRANCH}
-                
-              </div>
-            </div>
+              </span>
             </ForesightPrefetchLink>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2">
+          <div data-site-navigation className="flex w-full min-w-0 items-center gap-3 overflow-x-auto whitespace-nowrap pb-1 md:w-auto md:shrink-0 md:gap-4 md:overflow-visible md:pb-0">
             <ForesightPrefetchLink
               href="/"
+              aria-current={isCurrentPage(currentPath, "/") ? "page" : undefined}
               className={clsx(
-                "rounded-xl border px-3 py-2 text-sm transition",
-                view === "home"
-                  ? "bg-blue-600 text-white dark:bg-blue-500"
-                  : "bg-white text-gray-800 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800",
+                navLinkBaseClass,
+                isActivePath(currentPath, "/")
+                  ? navLinkActiveClass
+                  : navLinkInactiveClass,
               )}
             >
               Home
             </ForesightPrefetchLink>
             <ForesightPrefetchLink
-              href="/archives"
+              href="/archives/"
+              aria-current={isCurrentPage(currentPath, "/archives/") ? "page" : undefined}
               className={clsx(
-                "rounded-xl border px-3 py-2 text-sm transition",
-                view === "archive"
-                  ? "bg-blue-600 text-white dark:bg-blue-500"
-                  : "bg-white text-gray-800 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800",
+                navLinkBaseClass,
+                isActivePath(currentPath, "/archives/")
+                  ? navLinkActiveClass
+                  : navLinkInactiveClass,
               )}
               beforePrefetch={() => {
                 prefetchIndexAndLatestPosts();
@@ -139,23 +159,34 @@ export function HeaderBar(props: Props) {
               Archive
             </ForesightPrefetchLink>
             <ForesightPrefetchLink
-              href="/dictionary"
+              href="/dictionary/"
+              aria-current={isCurrentPage(currentPath, "/dictionary/") ? "page" : undefined}
               className={clsx(
-                "rounded-xl border px-3 py-2 text-sm transition",
-                view === "dictionary"
-                  ? "bg-blue-600 text-white dark:bg-blue-500"
-                  : "bg-white text-gray-800 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800",
+                navLinkBaseClass,
+                isActivePath(currentPath, "/dictionary/")
+                  ? navLinkActiveClass
+                  : navLinkInactiveClass,
               )}
               beforePrefetch={() => prefetchDictionaryIndex()}
             >
               Dictionary
             </ForesightPrefetchLink>
+            {discordInviteUrl ? (
+              <a
+                href={discordInviteUrl}
+                target="_blank"
+                rel="noreferrer"
+                className={clsx(navLinkBaseClass, navLinkInactiveClass)}
+              >
+                Join Discord
+              </a>
+            ) : null}
           </div>
 
-          <div className="flex flex-1 flex-wrap items-center gap-2">
+          <div className="flex w-full items-center gap-2 md:ml-auto md:flex-1">
             {view === "archive" ? (
               <>
-                <div className="relative min-w-55 flex-1 sm:w-auto">
+                <div className="relative w-full sm:ml-auto sm:w-full sm:max-w-xl">
                   <input
                     value={searchValue}
                     onChange={(e) => handleSearchChange(e.target.value)}
@@ -169,7 +200,7 @@ export function HeaderBar(props: Props) {
                     }}
                     placeholder="Search posts, codes, tags, authors"
                     className={clsx(
-                      "w-full rounded-xl border border-gray-300 bg-white px-3 py-2 pl-9 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-800 dark:bg-gray-900",
+                      "w-full border-b border-gray-300 bg-transparent px-2 py-2 pl-9 text-sm outline-none transition-colors focus:border-blue-500 dark:border-gray-700 dark:focus:border-blue-400",
                       showAiIndicator && "pr-14",
                     )}
                   />
@@ -177,6 +208,7 @@ export function HeaderBar(props: Props) {
                   {showAiIndicator ? (
                     <button
                       type="button"
+                      onPointerDown={(e) => e.preventDefault()}
                       onClick={handleAiSearchToggle}
                       aria-pressed={aiSearchApplied}
                       title={aiSearchApplied ? "Disable AI search" : "Enable AI search"}
@@ -191,22 +223,10 @@ export function HeaderBar(props: Props) {
                     </button>
                   ) : null}
                 </div>
-                <select
-                  value={archiveSortKey}
-                  onChange={(e) => handleSortChange(e.target.value as SortKey)}
-                  className="shrink-0 rounded-xl border border-gray-300 bg-white px-3 py-2 dark:border-gray-800 dark:bg-gray-900"
-                  aria-label="Sort posts"
-                >
-                  <option value="newest">Updated (newest)</option>
-                  <option value="oldest">Updated (oldest)</option>
-                  <option value="archived">Archived (newest)</option>
-                  <option value="archivedOldest">Archived (oldest)</option>
-                  <option value="az">A to Z</option>
-                </select>
               </>
             ) : view === "dictionary" ? (
               <>
-                <div className="relative min-w-55 flex-1 sm:w-auto">
+                <div className="relative w-full sm:ml-auto sm:w-full sm:max-w-xl">
                   <input
                     value={dictionarySearchValue}
                     onChange={(e) => handleDictionarySearchChange(e.target.value)}
@@ -220,7 +240,7 @@ export function HeaderBar(props: Props) {
                     }}
                     placeholder="Search dictionary terms"
                     className={clsx(
-                      "w-full rounded-xl border border-gray-300 bg-white px-3 py-2 pl-9 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-800 dark:bg-gray-900",
+                      "w-full border-b border-gray-300 bg-transparent px-2 py-2 pl-9 text-sm outline-none transition-colors focus:border-blue-500 dark:border-gray-700 dark:focus:border-blue-400",
                       showAiIndicator && "pr-14",
                     )}
                   />
@@ -228,6 +248,7 @@ export function HeaderBar(props: Props) {
                   {showAiIndicator ? (
                     <button
                       type="button"
+                      onPointerDown={(e) => e.preventDefault()}
                       onClick={handleAiSearchToggle}
                       aria-pressed={aiSearchApplied}
                       title={aiSearchApplied ? "Disable AI search" : "Enable AI search"}
@@ -242,30 +263,9 @@ export function HeaderBar(props: Props) {
                     </button>
                   ) : null}
                 </div>
-                <select
-                  value={dictionarySortValue}
-                  onChange={(e) => handleDictionarySortChange(e.target.value as "az" | "updated")}
-                  className="shrink-0 rounded-xl border border-gray-300 bg-white px-3 py-2 dark:border-gray-800 dark:bg-gray-900"
-                  aria-label="Sort dictionary terms"
-                >
-                  <option value="az">A to Z</option>
-                  <option value="updated">Updated (newest)</option>
-                </select>
               </>
             ) : null}
 
-            {discordInviteUrl ? (
-              <div className="ml-auto flex items-center gap-2">
-                <a
-                  href={discordInviteUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="shrink-0 rounded-xl border border-blue-600 bg-blue-600 px-3 py-2 text-white hover:bg-blue-700 dark:border-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600"
-                >
-                  Join Discord
-                </a>
-              </div>
-            ) : null}
           </div>
         </div>
       </div>

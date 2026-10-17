@@ -1,6 +1,6 @@
 'use client';
 
-import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { computeAuthorCounts, computeChannelCounts, computeTagCounts, filterPosts, getPostAuthorsNormalized } from "@/lib/filtering";
 import { type ArchiveListItem } from "@/lib/archive";
@@ -95,6 +95,65 @@ const buildPersistedState = (state: FilterState, scrollY?: number) => ({
   scrollY,
 });
 
+const normalizeSelectedChannelCodes = (channels: ChannelRef[], selectedChannels: string[]) => {
+  if (!selectedChannels.length) return [];
+  const codeByName = new Map(channels.map((ch) => [normalize(ch.name), ch.code] as const));
+  const validCodes = new Set(channels.map((ch) => ch.code));
+  const normalizedCodes = new Set<string>();
+  selectedChannels.forEach((value) => {
+    if (validCodes.has(value)) {
+      normalizedCodes.add(value);
+      return;
+    }
+    const mappedCode = codeByName.get(normalize(value));
+    if (mappedCode) normalizedCodes.add(mappedCode);
+  });
+  return Array.from(normalizedCodes);
+};
+
+const getVisibleChannels = (channels: ChannelRef[], selectedChannels: string[]) =>
+  selectedChannels.length
+    ? channels.filter((ch) => selectedChannels.includes(ch.code))
+    : channels;
+
+const getChannelAvailableTagNorms = (
+  posts: ArchiveListItem[],
+  channels: ChannelRef[],
+  selectedChannels: string[],
+) => {
+  const channelPool = getVisibleChannels(channels, selectedChannels);
+  const visibleChannelCodes = new Set(channelPool.map((ch) => ch.code));
+  return new Set(
+    [
+      ...channelPool.flatMap((ch) => ch.availableTags || []),
+      ...posts
+        .filter((p) => visibleChannelCodes.has(p.channel.code))
+        .flatMap((p) => p.entry.tags || []),
+    ]
+      .map((name) => normalize(name))
+      .filter(Boolean),
+  );
+};
+
+const sanitizeTagStateForChannels = (
+  state: Record<string, -1 | 0 | 1>,
+  posts: ArchiveListItem[],
+  channels: ChannelRef[],
+  selectedChannels: string[],
+) => {
+  const availableTagNorms = getChannelAvailableTagNorms(posts, channels, selectedChannels);
+  let changed = false;
+  const next: Record<string, -1 | 0 | 1> = {};
+  Object.entries(state).forEach(([name, value]) => {
+    if (value === 0 || availableTagNorms.has(normalize(name))) {
+      next[name] = value;
+      return;
+    }
+    changed = true;
+  });
+  return changed ? next : state;
+};
+
 
 
 export function useArchiveFilters({
@@ -137,15 +196,26 @@ export function useArchiveFilters({
     body.style.scrollBehavior = prevBodyBehavior;
   };
 
-  const applyFilterState = (state: FilterState) => {
+  const effectiveSelectedChannels = useMemo(
+    () => normalizeSelectedChannelCodes(channels, selectedChannels),
+    [channels, selectedChannels],
+  );
+
+  const effectiveTagState = useMemo(
+    () => (isArchivePostURL ? {} : sanitizeTagStateForChannels(tagState, posts, channels, effectiveSelectedChannels)),
+    [channels, isArchivePostURL, posts, effectiveSelectedChannels, tagState],
+  );
+
+  const applyFilterState = useEffectEvent((state: FilterState) => {
+    const normalizedChannels = normalizeSelectedChannelCodes(channels, state.selectedChannels);
     setQ(state.q);
     setCommittedQ(state.committedQ);
     setTagMode(state.tagMode);
-    setTagState(state.tagState);
-    setSelectedChannels(state.selectedChannels);
+    setTagState(sanitizeTagStateForChannels(state.tagState, posts, channels, normalizedChannels));
+    setSelectedChannels(normalizedChannels);
     setSelectedAuthors(state.selectedAuthors);
     setSortKey(state.sortKey);
-  };
+  });
 
   useEffect(() => {
     if (isArchivePostURL || isPostOpen) return;
@@ -185,12 +255,12 @@ export function useArchiveFilters({
       q,
       committedQ,
       tagMode,
-      tagState,
-      selectedChannels,
+      tagState: effectiveTagState,
+      selectedChannels: effectiveSelectedChannels,
       selectedAuthors,
       sortKey,
     }, typeof window === "undefined" ? undefined : window.scrollY), pathname);
-  }, [committedQ, sortKey, tagMode, tagState, selectedChannels, selectedAuthors, q, router, pathname, isPostOpen, isArchivePostURL]);
+  }, [committedQ, sortKey, tagMode, effectiveTagState, effectiveSelectedChannels, selectedAuthors, q, router, pathname, isPostOpen, isArchivePostURL]);
 
   useEffect(() => {
     if (skipUrlSyncRef.current) return;
@@ -199,12 +269,12 @@ export function useArchiveFilters({
       q,
       committedQ,
       tagMode,
-      tagState,
-      selectedChannels,
+      tagState: effectiveTagState,
+      selectedChannels: effectiveSelectedChannels,
       selectedAuthors,
       sortKey,
     }, typeof window === "undefined" ? undefined : window.scrollY));
-  }, [q, committedQ, tagMode, tagState, selectedChannels, selectedAuthors, sortKey, isArchivePostURL]);
+  }, [q, committedQ, tagMode, effectiveTagState, effectiveSelectedChannels, selectedAuthors, sortKey, isArchivePostURL]);
 
   useEffect(() => {
     skipUrlSyncRef.current = false;
@@ -224,8 +294,8 @@ export function useArchiveFilters({
           q,
           committedQ,
           tagMode,
-          tagState,
-          selectedChannels,
+          tagState: effectiveTagState,
+          selectedChannels: effectiveSelectedChannels,
           selectedAuthors,
           sortKey,
         }, window.scrollY));
@@ -240,7 +310,7 @@ export function useArchiveFilters({
         scrollSaveTimeoutRef.current = null;
       }
     };
-  }, [q, committedQ, tagMode, tagState, selectedChannels, selectedAuthors, sortKey, isArchivePostURL, isPostOpen]);
+  }, [q, committedQ, tagMode, effectiveTagState, effectiveSelectedChannels, selectedAuthors, sortKey, isArchivePostURL, isPostOpen]);
 
   const commitSearch = () => {
     if (isArchivePostURL) return;
@@ -252,8 +322,8 @@ export function useArchiveFilters({
       q,
       committedQ: nextQ,
       tagMode,
-      tagState,
-      selectedChannels,
+      tagState: effectiveTagState,
+      selectedChannels: effectiveSelectedChannels,
       selectedAuthors,
       sortKey,
     }, typeof window === "undefined" ? undefined : window.scrollY);
@@ -264,42 +334,21 @@ export function useArchiveFilters({
   };
 
   const includeTags = useMemo(
-    () => (isArchivePostURL ? [] : Object.keys(tagState).filter((k) => tagState[k] === 1).map(normalize)),
-    [isArchivePostURL, tagState],
+    () => (isArchivePostURL ? [] : Object.keys(effectiveTagState).filter((k) => effectiveTagState[k] === 1).map(normalize)),
+    [isArchivePostURL, effectiveTagState],
   );
   const excludeTags = useMemo(
-    () => (isArchivePostURL ? [] : Object.keys(tagState).filter((k) => tagState[k] === -1).map(normalize)),
-    [isArchivePostURL, tagState],
+    () => (isArchivePostURL ? [] : Object.keys(effectiveTagState).filter((k) => effectiveTagState[k] === -1).map(normalize)),
+    [isArchivePostURL, effectiveTagState],
+  );
+  const activeTagNames = useMemo(
+    () => (isArchivePostURL ? [] : Object.keys(effectiveTagState).filter((k) => effectiveTagState[k] !== 0)),
+    [isArchivePostURL, effectiveTagState],
   );
   const normalizedSelectedAuthors = useMemo(
     () => (isArchivePostURL ? [] : selectedAuthors.map(normalize)),
     [isArchivePostURL, selectedAuthors],
   );
-
-  const allTags = useMemo<Tag[]>(() => {
-    if (isArchivePostURL) return [];
-    const channelPool = selectedChannels.length
-      ? channels.filter((ch) => selectedChannels.includes(ch.code) || selectedChannels.includes(ch.name))
-      : channels;
-    const fromChannels = channelPool.flatMap((ch) => ch.availableTags || []);
-    const authorSet = normalizedSelectedAuthors.length ? new Set(normalizedSelectedAuthors) : null;
-    const postsPool = posts.filter((p) => {
-      const matchesChannel =
-        !selectedChannels.length || selectedChannels.includes(p.channel.code) || selectedChannels.includes(p.channel.name);
-      if (!matchesChannel) return false;
-      if (!authorSet) return true;
-      const authors = getPostAuthorsNormalized(p);
-      return authors.some((a) => authorSet.has(a));
-    });
-    const fromEntryRefs = postsPool.flatMap((p) => p.entry.tags || []);
-    const fromGlobals = (globalTags?.length ? globalTags : DEFAULT_GLOBAL_TAGS).map((tag) => tag.name);
-    const names = Array.from(new Set([...fromGlobals, ...fromChannels, ...fromEntryRefs]));
-    let tags = sortTagObjectsForDisplay(names.map((n) => ({ id: n, name: n })), globalTags);
-    if (!selectedChannels.length && !selectedAuthors.length) {
-      tags = tags.filter((tag) => !!getSpecialTagMeta(tag.name, globalTags));
-    }
-    return tags;
-  }, [channels, posts, selectedAuthors.length, selectedChannels, normalizedSelectedAuthors, globalTags, isArchivePostURL]);
 
   const availableAuthors = useMemo(() => {
     if (isArchivePostURL) return [] as string[];
@@ -323,8 +372,8 @@ export function useArchiveFilters({
   );
   const regularFilteredPosts = useMemo(() => {
     if (isArchivePostURL) return [] as ArchiveListItem[];
-    return filterPosts(posts, { q, includeTags, excludeTags, selectedChannels, selectedAuthors, sortKey, tagMode });
-  }, [posts, q, includeTags, excludeTags, selectedChannels, selectedAuthors, sortKey, tagMode, isArchivePostURL]);
+    return filterPosts(posts, { q, includeTags, excludeTags, selectedChannels: effectiveSelectedChannels, selectedAuthors, sortKey, tagMode });
+  }, [posts, q, includeTags, excludeTags, effectiveSelectedChannels, selectedAuthors, sortKey, tagMode, isArchivePostURL]);
 
   const authorCounts = useMemo(
     () => (isArchivePostURL ? {} : computeAuthorCounts(regularFilteredPosts)),
@@ -346,7 +395,7 @@ export function useArchiveFilters({
       q: "",
       includeTags,
       excludeTags,
-      selectedChannels,
+      selectedChannels: effectiveSelectedChannels,
       selectedAuthors,
       sortKey,
       tagMode,
@@ -387,7 +436,7 @@ export function useArchiveFilters({
     });
 
     return { appended, recommendedCodes, recommendedScores };
-  }, [posts, q, includeTags, excludeTags, selectedChannels, selectedAuthors, sortKey, tagMode, isArchivePostURL, semanticSearch, regularFilteredPosts]);
+  }, [posts, q, includeTags, excludeTags, effectiveSelectedChannels, selectedAuthors, sortKey, tagMode, isArchivePostURL, semanticSearch, regularFilteredPosts]);
 
   const filteredPosts = useMemo(() => {
     if (isArchivePostURL) return [] as ArchiveListItem[];
@@ -400,8 +449,8 @@ export function useArchiveFilters({
 
   const semanticApplied = useMemo(() => {
     if (semanticSearch?.forceDisabled) return false;
-    return semanticAppendData.appended.length > 0;
-  }, [semanticSearch?.forceDisabled, semanticAppendData.appended.length]);
+    return true;
+  }, [semanticSearch?.forceDisabled]);
 
   const authorOptions = useMemo<AuthorOption[]>(() => {
     if (isArchivePostURL) return [];
@@ -504,9 +553,37 @@ export function useArchiveFilters({
     [filteredPosts, isArchivePostURL],
   );
   const tagCounts = useMemo(
-    () => (isArchivePostURL ? {} : computeTagCounts(regularFilteredPosts)),
-    [regularFilteredPosts, isArchivePostURL],
+    () => (isArchivePostURL ? {} : computeTagCounts(filteredPosts)),
+    [filteredPosts, isArchivePostURL],
   );
+
+  const allTags = useMemo<Tag[]>(() => {
+    if (isArchivePostURL) return [];
+    const channelPool = getVisibleChannels(channels, effectiveSelectedChannels);
+    const fromChannels = channelPool.flatMap((ch) => ch.availableTags || []);
+    const authorSet = normalizedSelectedAuthors.length ? new Set(normalizedSelectedAuthors) : null;
+    const postsPool = posts.filter((p) => {
+      const matchesChannel =
+        !effectiveSelectedChannels.length || effectiveSelectedChannels.includes(p.channel.code);
+      if (!matchesChannel) return false;
+      if (!authorSet) return true;
+      const authors = getPostAuthorsNormalized(p);
+      return authors.some((a) => authorSet.has(a));
+    });
+    const fromEntryRefs = postsPool.flatMap((p) => p.entry.tags || []);
+    const fromGlobals = (globalTags?.length ? globalTags : DEFAULT_GLOBAL_TAGS).map((tag) => tag.name);
+    const names = Array.from(new Set([...fromGlobals, ...fromChannels, ...fromEntryRefs, ...activeTagNames]));
+    let tags = sortTagObjectsForDisplay(names.map((n) => ({ id: n, name: n })), globalTags);
+    if (!effectiveSelectedChannels.length) {
+      const activeTagNorms = new Set(activeTagNames.map((name) => normalize(name)));
+      if (q.trim()) {
+        tags = tags.filter((tag) => activeTagNorms.has(normalize(tag.name)) || (tagCounts[normalize(tag.name)] || 0) > 0);
+      } else if (!selectedAuthors.length) {
+        tags = tags.filter((tag) => activeTagNorms.has(normalize(tag.name)) || !!getSpecialTagMeta(tag.name, globalTags));
+      }
+    }
+    return tags;
+  }, [activeTagNames, channels, posts, selectedAuthors.length, effectiveSelectedChannels, normalizedSelectedAuthors, globalTags, isArchivePostURL, q, tagCounts]);
 
   const handleToggleTag = (tagName: string, rightClick: boolean) => {
     scrollToTop();
@@ -554,19 +631,23 @@ export function useArchiveFilters({
         scrollToTop();
         setTagMode(mode);
       },
-      state: tagState,
+      state: effectiveTagState,
       setState: setTagState,
       all: allTags,
       counts: tagCounts,
       toggle: handleToggleTag,
     },
     channels: {
-      selected: selectedChannels,
-      setSelected: setSelectedChannels,
+      selected: effectiveSelectedChannels,
+      setSelected: (next: string[]) => setSelectedChannels(normalizeSelectedChannelCodes(channels, next)),
       counts: channelCounts,
       toggle: (code: string) => {
         scrollToTop();
-        setSelectedChannels((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]));
+        setSelectedChannels((prev) => {
+          const next = prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code];
+          setTagState((prevTagState) => sanitizeTagStateForChannels(prevTagState, posts, channels, next));
+          return next;
+        });
       },
     },
     authors: {

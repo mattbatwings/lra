@@ -11,10 +11,9 @@ export function AuthorsLine({ authors }: { authors: Author[] }) {
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
       <span className="font-medium">Authors:</span>
-      {visible.slice(0, 3).map((a, i) => (
+      {visible.map((a, i) => (
         <AuthorInline key={`au-${i}`} a={a} />
       ))}
-      {visible.length > 3 && <span>+{visible.length - 3}</span>}
     </div>
   );
 }
@@ -25,10 +24,9 @@ export function EndorsersLine({ endorsers }: { endorsers: Author[] }) {
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
       <span className="font-medium">Endorsed by:</span>
-      {vis.slice(0, 4).map((a, i) => (
+      {vis.map((a, i) => (
         <AuthorInline key={`en-${i}`} a={a} />
       ))}
-      {vis.length > 4 && <span>+{vis.length - 4}</span>}
     </div>
   );
 }

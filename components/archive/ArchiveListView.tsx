@@ -5,7 +5,7 @@ import { ArchiveFilters } from "./ArchiveFilters";
 import { PostCard } from "./PostCard";
 import { VirtualizedGrid } from "./VirtualizedGrid";
 import type { ArchiveListItem } from "@/lib/archive";
-import type { ChannelRef, GlobalTag } from "@/lib/types";
+import type { ChannelRef, GlobalTag, SortKey } from "@/lib/types";
 import type { ArchiveFiltersModel } from "@/hooks/useArchiveFilters";
 import { normalize } from "@/lib/utils/strings";
 import { TagChip } from "../ui/Tags";
@@ -57,7 +57,7 @@ export function ArchiveListView({
   return (
     <div className="mx-auto w-full px-2 pb-16 pt-4 sm:px-4 lg:px-6" style={{ contentVisibility: visible ? "visible" : "hidden" }}>
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8 lg:min-h-screen">
-        <aside ref={sidebarRef} className="lg:w-80 xl:w-96 shrink-0 lg:sticky lg:top-24 pr-1 sidebar-scroll">
+        <aside ref={sidebarRef} className="lg:w-80 xl:w-96 shrink-0 lg:sticky lg:top-22.5 pr-1 sidebar-scroll">
           <div className="sidebar-scroll-inner lg:max-h-[calc(100vh-80px)]">
             <ArchiveFilters
               channels={channelsList}
@@ -104,16 +104,27 @@ export function ArchiveListView({
                 />
               ))}
             </div>
-            <div className="mb-6 flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-              {showPagination ? (
-                <span>
-                  Showing {rangeStart}-{rangeEnd} of {filteredPosts.length}/{totalPosts} posts
-                </span>
-              ) : (
-                <span>
-                  Showing 1-{filteredPosts.length} of {filteredPosts.length}/{totalPosts} posts
-                </span>
-              )}
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 dark:text-gray-300">
+              <span>
+                {showPagination
+                  ? `Showing ${rangeStart}-${rangeEnd} of ${filteredPosts.length}/${totalPosts} posts`
+                  : `Showing 1-${filteredPosts.length} of ${filteredPosts.length}/${totalPosts} posts`}
+              </span>
+              <label className="flex items-center gap-2">
+                <span className="text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400">Sort</span>
+                <select
+                  value={sort.key}
+                  onChange={(e) => sort.setKey(e.target.value as SortKey)}
+                  className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm outline-none transition hover:border-gray-300 focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-600"
+                  aria-label="Sort posts"
+                >
+                  <option value="newest">Updated (newest)</option>
+                  <option value="oldest">Updated (oldest)</option>
+                  <option value="archived">Archived (newest)</option>
+                  <option value="archivedOldest">Archived (oldest)</option>
+                  <option value="az">A to Z</option>
+                </select>
+              </label>
             </div>
           </div>
 

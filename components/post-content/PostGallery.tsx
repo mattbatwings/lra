@@ -1,8 +1,7 @@
-import Image from "next/image";
 import { useRef } from "react";
 import type { Image as ArchiveImage } from "@/lib/types";
 import type { LightboxState } from "./types";
-import { preload } from "react-dom";
+import { LoadingImage } from "../ui/LoadingImage";
 
 const DEFAULT_ASPECT = "16/9";
 
@@ -60,7 +59,7 @@ export function PostGallery({
         }}
       >
         {activeImage ? (
-          <Image
+          <LoadingImage
             src={activeImage.path || activeImage.url}
             alt={activeImage.description || activeImage.name}
             fill
@@ -133,7 +132,7 @@ export function PostGallery({
               }`}
               title={img.description || img.name}
             >
-              <Image
+              <LoadingImage
                 src={img.path || img.url}
                 alt={img.description || img.name}
                 fill

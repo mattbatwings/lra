@@ -1,6 +1,5 @@
 'use client';
 
-import Image from "next/image";
 import type { MouseEvent } from "react";
 import { RelativeTime } from "../ui/RelativeTime";
 import { prefetchArchiveEntryWithMainImage, type ArchiveListItem } from "@/lib/archive";
@@ -10,6 +9,7 @@ import { getPreviewByCode } from "@/lib/previews";
 import { ForesightPrefetchLink } from "../ui/ForesightPrefetchLink";
 import { ChannelBadge } from "../ui/ChannelBadge";
 import { TagList } from "../ui/Tags";
+import { LoadingImage } from "../ui/LoadingImage";
 
 type Props = {
   post: ArchiveListItem;
@@ -43,7 +43,7 @@ export function PostCard({ post, sortKey, onNavigate, globalTags, aiRecommended 
   return (
     <article className="group flex h-full min-h-95 flex-col rounded-2xl bg-white transition hover:shadow-md dark:bg-gray-900">
       <ForesightPrefetchLink
-        href={`/archives/${post.slug}`}
+        href={`/archives/${post.slug}/`}
         className="flex h-full w-full flex-col text-left"
         onClick={(event) => {
           const handled = onNavigate?.(post, event);
@@ -62,9 +62,9 @@ export function PostCard({ post, sortKey, onNavigate, globalTags, aiRecommended 
               AI{typeof aiScore === "number" ? ` ${aiScore.toFixed(2)}` : ""}
             </span>
           ) : null}
-          <div className="h-full w-full overflow-hidden rounded-t-2xl">
+          <div className="relative h-full w-full overflow-hidden rounded-t-2xl">
             {displaySrc ? (
-              <Image
+              <LoadingImage
                 src={displaySrc}
                 alt={post.entry.name || "thumbnail"}
                 fill

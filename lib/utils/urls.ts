@@ -16,9 +16,20 @@ type DictionaryUrlOptions = {
   sort?: "az" | "updated";
 };
 
+// next/router prepends basePath itself, so hrefs passed to router.push must not include it.
+export function stripBasePath(href: string, basePath: string = siteConfig.basePath || "") {
+  if (!basePath || !href.startsWith(basePath)) return href;
+  const rest = href.slice(basePath.length);
+  if (!rest) return "/";
+  return /^[/?#]/.test(rest) ? rest : href;
+}
+
 export function getArchiveSlugInfo(url: URL, basePath: string = siteConfig.basePath || ""): ArchiveSlugInfo {
   const rawPath = url.pathname;
   const normalizedPath = basePath && rawPath.startsWith(basePath) ? rawPath.slice(basePath.length) : rawPath;
+  if (normalizedPath === "/archives" || normalizedPath === "/archives/") {
+    return { slug: null, isArchiveRoot: true };
+  }
   if (!normalizedPath.startsWith("/archives/")) {
     return { slug: null, isArchiveRoot: false };
   }
@@ -47,6 +58,9 @@ export function getURLFromMouseEvent(event: React.MouseEvent<HTMLAnchorElement, 
 export function getDictionarySlugInfo(url: URL, basePath: string = siteConfig.basePath || ""): DictionarySlugInfo {
   const rawPath = url.pathname;
   const normalizedPath = basePath && rawPath.startsWith(basePath) ? rawPath.slice(basePath.length) : rawPath;
+  if (normalizedPath === "/dictionary" || normalizedPath === "/dictionary/") {
+    return { slug: null, isDictionaryRoot: true };
+  }
   if (!normalizedPath.startsWith("/dictionary/")) {
     return { slug: null, isDictionaryRoot: false };
   }
@@ -69,7 +83,7 @@ export function buildDictionaryUrl(
   const sp = new URLSearchParams();
   if (trimmedQuery) sp.set("q", trimmedQuery);
   if (sort !== "az") sp.set("sort", sort);
-  const base = slug ? `/dictionary/${encodeURIComponent(slug)}` : "/dictionary";
+  const base = slug ? `/dictionary/${encodeURIComponent(slug)}/` : "/dictionary/";
   const queryString = sp.toString();
   const nextPath = queryString ? `${base}?${queryString}` : base;
   if (!basePath) return nextPath;

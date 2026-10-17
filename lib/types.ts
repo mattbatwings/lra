@@ -190,6 +190,7 @@ export type ArchiveEntryData = {
   name: string;
   code: string;
   authors: Author[];
+  acknowledgements?: Author[];
   endorsers: Author[];
   tags: Tag[];
   images: Image[];

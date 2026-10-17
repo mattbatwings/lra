@@ -132,7 +132,7 @@ export default function NotFoundResolver({ kind, slug }: Props) {
           if (canonicalSlug && canonicalSlug !== lookupSlug) {
             const canonicalKey = `archive:${canonicalSlug.toLowerCase()}`;
             requestKeyRef.current = canonicalKey;
-            router.replace(`/archives/${encodeURIComponent(canonicalSlug)}`);
+            router.replace(`/archives/${encodeURIComponent(canonicalSlug)}/`);
           }
         } else {
           const dictionaryEntries = await ensureDictionaryIndex();
@@ -163,7 +163,7 @@ export default function NotFoundResolver({ kind, slug }: Props) {
           if (canonicalSlug && canonicalSlug !== lookupSlug) {
             const canonicalKey = `dictionary:${canonicalSlug.toLowerCase()}`;
             requestKeyRef.current = canonicalKey;
-            router.replace(`/dictionary/${encodeURIComponent(canonicalSlug)}`);
+            router.replace(`/dictionary/${encodeURIComponent(canonicalSlug)}/`);
           }
         }
       } catch (err) {
@@ -183,7 +183,7 @@ export default function NotFoundResolver({ kind, slug }: Props) {
   const isArchivePath = Boolean(archiveSlug);
   const isDictionaryPath = Boolean(dictionarySlug);
   const lookupSlug = archiveSlug ?? dictionarySlug ?? "";
-  const fallbackHref = isDictionaryPath ? "/dictionary" : "/archives";
+  const fallbackHref = isDictionaryPath ? "/dictionary/" : "/archives/";
   const showNotFound =
     hasResolved &&
     ((isArchivePath && (!post || !data)) || (isDictionaryPath && !dictionaryEntry) || Boolean(error));
@@ -209,7 +209,7 @@ export default function NotFoundResolver({ kind, slug }: Props) {
             dictionaryTooltips={dictionaryTooltips}
             onClose={() => {
               setDictionaryEntry(null);
-              router.push("/dictionary");
+              router.push("/dictionary/");
             }}
             variant="inline"
           />
