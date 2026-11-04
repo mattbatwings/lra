@@ -5,19 +5,24 @@ import { Footer } from "@/components/layout/Footer";
 import { LegacyRedirect } from "@/components/home/LegacyRedirect";
 import { siteConfig } from "@/lib/siteConfig";
 import { PillarCard } from "@/components/home/PillarCard";
+import { PageJsonLd } from "@/components/seo/PageJsonLd";
+import { createCollectionPageJsonLd } from "@/lib/jsonLd";
+
+const homeTitle = siteConfig.siteName;
+const homeDescription = siteConfig.siteDescription;
 
 export default function Home() {
   const pillars = [
     {
       title: "A Curated Archive",
       body: "A list of useful logical redstone designs and creations submitted by community members.",
-      href: "/archives",
+      href: "/archives/",
       cta: "Browse the archive",
     },
     {
       title: "Living Dictionary",
       body: "An ever-growing dictionary of terms and concepts related to logical redstone.",
-      href: "/dictionary",
+      href: "/dictionary/",
       cta: "Open the dictionary",
     },
     {
@@ -33,16 +38,31 @@ export default function Home() {
       cta: "Join the Discord",
     },
   ];
+  const homeJsonLd = createCollectionPageJsonLd({
+    path: "/",
+    title: homeTitle,
+    description: homeDescription,
+    type: "WebPage",
+    numberOfItems: pillars.length,
+    items: pillars.map((pillar) => ({
+      name: pillar.title,
+      description: pillar.body,
+      url: pillar.href,
+      type: "WebPage",
+    })),
+  });
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white">
-      <LegacyRedirect />
-      <HeaderBar
-        siteName={siteConfig.siteName}
-        view="home"
-        logoSrc={siteConfig.logoSrc}
-        discordInviteUrl={siteConfig.discordInviteUrl}
-      />
+    <>
+      <PageJsonLd data={homeJsonLd} />
+      <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white">
+        <LegacyRedirect />
+        <HeaderBar
+          siteName={siteConfig.siteName}
+          view="home"
+          logoSrc={siteConfig.logoSrc}
+          discordInviteUrl={siteConfig.discordInviteUrl}
+        />
 
       <main className="mx-auto max-w-5xl px-4 pb-16 pt-10 sm:px-6 lg:px-8">
         <section className="w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
@@ -80,7 +100,8 @@ export default function Home() {
         </section>
       </main>
 
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </>
   );
 }

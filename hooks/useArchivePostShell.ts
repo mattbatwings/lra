@@ -113,11 +113,13 @@ export function useArchivePostShell({ posts, archiveRootHref, setIsArchivePostUR
   const openPostFromList = useCallback((post: ArchiveListItem, event?: MouseEvent<HTMLAnchorElement>) => {
     if (!isPlainLeftClick(event)) return false;
     if (typeof window === "undefined") return true;
+    const archiveRootPath = archiveRootHref.endsWith("/") ? archiveRootHref : `${archiveRootHref}/`;
+    const archiveRootPathNoTrailing = archiveRootPath.replace(/\/+$/, "");
     const currentHref = getCurrentHref();
     if (!openPost) {
       listUrlRef.current = currentHref;
     }
-    const nextHref = `${archiveRootHref}/${encodeURIComponent(post.slug)}/`;
+    const nextHref = `${archiveRootPathNoTrailing}/${encodeURIComponent(post.slug)}/`;
     const currentState = getHistoryState();
     const nextState = buildHistoryState({
       archiveListHref: listUrlRef.current || currentHref,
@@ -144,9 +146,10 @@ export function useArchivePostShell({ posts, archiveRootHref, setIsArchivePostUR
 
   const openPostFromUrl = useCallback((post: ArchiveListItem) => {
     if (openPost?.slug === post.slug) return;
+    const archiveRootPath = archiveRootHref.endsWith("/") ? archiveRootHref : `${archiveRootHref}/`;
     if (typeof window !== "undefined" && !listUrlRef.current) {
       const historyState = getHistoryState();
-      listUrlRef.current = historyState.archiveListHref || archiveRootHref;
+      listUrlRef.current = historyState.archiveListHref || archiveRootPath;
     }
     loadPost(post);
   }, [archiveRootHref, loadPost, openPost]);
@@ -186,6 +189,7 @@ export function useArchivePostShell({ posts, archiveRootHref, setIsArchivePostUR
 
   const goHome = useCallback(() => {
     if (typeof window === "undefined") return;
+    const archiveRootPath = archiveRootHref.endsWith("/") ? archiveRootHref : `${archiveRootHref}/`;
 
     const nextState = buildHistoryState({
       archiveListHref: listUrlRef.current || undefined,
@@ -194,7 +198,7 @@ export function useArchivePostShell({ posts, archiveRootHref, setIsArchivePostUR
       backCount: undefined,
       lastDictionaryId: undefined,
     });
-    window.history.pushState(nextState, "", archiveRootHref);
+    window.history.pushState(nextState, "", archiveRootPath);
     resetOpenState();
   }, [archiveRootHref, openPost, resetOpenState]);
 

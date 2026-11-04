@@ -19,6 +19,8 @@ export type SiteConfig = {
   };
   discordInviteUrl?: string;
   repositoryUrl?: string;
+  // Namespace for iframe embed API messages; parent pages must use the same value.
+  embedNamespace: string;
 };
 
 const normalizeBasePath = (value: string) => {
@@ -58,4 +60,5 @@ export const siteConfig: SiteConfig = {
   lfsExtensions: ["mp4", "bin", "zip"],
   repositoryUrl: "https://github.com/mattbatwings/Logical-Redstone-Archive",
   discordInviteUrl: "https://discord.gg/r7FmnacNas",
+  embedNamespace: "logical-redstone-archive",
 };

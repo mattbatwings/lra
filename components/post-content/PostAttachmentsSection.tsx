@@ -1,14 +1,17 @@
 import type { Attachment } from "@/lib/types";
+import type { ArchiveListItem } from "@/lib/archive";
 import { AttachmentCard } from "../ui/Attachments";
-import type { LightboxState, PdfViewerState } from "./types";
+import type { CsvViewerState, LightboxState, PdfViewerState } from "./types";
 
 type Props = {
+  post: ArchiveListItem;
   attachments: Array<Attachment & { path?: string }>;
   setLightbox: (lightbox: LightboxState) => void;
   onViewPdf: (pdf: PdfViewerState) => void;
+  onViewCsv: (csv: CsvViewerState) => void;
 };
 
-export function PostAttachmentsSection({ attachments, setLightbox, onViewPdf }: Props) {
+export function PostAttachmentsSection({ post, attachments, setLightbox, onViewPdf, onViewCsv }: Props) {
   if (!attachments.length) return null;
 
   return (
@@ -19,14 +22,16 @@ export function PostAttachmentsSection({ attachments, setLightbox, onViewPdf }: 
           <AttachmentCard
             key={att.id}
             att={att}
-            onView={() =>
+            post={post}
+            onView={(img) =>
               setLightbox({
-                src: att.path || att.url,
+                src: img.path || img.url,
                 alt: att.description || att.name,
                 mode: "single",
               })
             }
             onViewPdf={(pdf) => onViewPdf(pdf)}
+            onViewCsv={(csv) => onViewCsv(csv)}
           />
         ))}
       </div>

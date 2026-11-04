@@ -38,7 +38,7 @@ const NotFoundResolver = dynamic(() => import("./NotFoundResolver"), {
 });
 
 function PendingLookup({ kind, slug }: { kind?: NotFoundKind | null; slug?: string | null }) {
-  const fallbackHref = kind === "dictionary" ? "/dictionary" : kind === "archive" ? "/archives" : "/";
+  const fallbackHref = kind === "dictionary" ? "/dictionary/" : kind === "archive" ? "/archives/" : "/";
 
   const kindLabel = kind === "dictionary" ? "dictionary" : kind === "archive" ? "archive" : "page";
   const slugLabel = slug?.trim() || "…";

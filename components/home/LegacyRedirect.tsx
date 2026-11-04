@@ -29,7 +29,7 @@ export function LegacyRedirect() {
               p.slug.toLowerCase() === lower,
           );
           if (match && !cancelled) {
-            router.replace(`/archives/${match.slug}`);
+            router.replace(`/archives/${match.slug}/`);
             return;
           }
         } catch {
@@ -42,7 +42,7 @@ export function LegacyRedirect() {
           const dictionary = await fetchDictionaryIndex();
           const entry = dictionary.entries.find((e) => e.index.id === did);
           if (entry && !cancelled) {
-            router.replace(`/dictionary/${encodeURIComponent(buildDictionarySlug(entry.index))}`);
+            router.replace(`/dictionary/${encodeURIComponent(buildDictionarySlug(entry.index))}/`);
           }
         } catch {
           // Ignore if dictionary fetch fails

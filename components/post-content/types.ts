@@ -11,6 +11,12 @@ export type PdfViewerState = {
   description?: string;
 };
 
+export type CsvViewerState = {
+  src: string;
+  title?: string;
+  description?: string;
+};
+
 export type PdfPageInfo = {
   page: number;
   total: number;

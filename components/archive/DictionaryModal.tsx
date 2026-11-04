@@ -157,7 +157,7 @@ export function DictionaryModal({ entry, onClose, closeHref, dictionaryTooltips,
                       return (
                         <ForesightPrefetchLink
                           key={code}
-                          href={`/archives/${post.slug}`}
+                          href={`/archives/${post.slug}/`}
                           className="flex w-full items-start justify-between gap-3 rounded-lg border px-3 py-2 text-left transition hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/60"
                           onClick={onLinkClick}
                           beforePrefetch={() => {
@@ -202,7 +202,7 @@ export function DictionaryModal({ entry, onClose, closeHref, dictionaryTooltips,
                     <div className="mt-2">
                       <Link
                         prefetch={false}
-                        href="/archives"
+                        href="/archives/"
                         className="text-xs text-blue-600 hover:underline dark:text-blue-400"
                       >
                         Go to archives

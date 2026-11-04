@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { HeaderBar } from "../layout/HeaderBar";
 import { ArchivePostView } from "./ArchivePostView";
 import { ArchiveListView } from "./ArchiveListView";
@@ -11,9 +12,10 @@ import { type ArchiveIndex } from "@/lib/archive";
 import { DEFAULT_GLOBAL_TAGS, type GlobalTag } from "@/lib/types";
 import { siteConfig } from "@/lib/siteConfig";
 import { Footer } from "@/components/layout/Footer";
-import { getArchiveSlugInfo } from "@/lib/utils/urls";
+import { getArchiveSlugInfo, stripBasePath } from "@/lib/utils/urls";
 import { normalize } from "@/lib/utils/strings";
 import { ensureEmbeddingsLoaded, getScores } from "@/lib/semanticSearch";
+import { useEmbed } from "../embed/EmbedProvider";
 
 type Props = {
   initialArchive: ArchiveIndex;
@@ -32,6 +34,18 @@ export function ArchiveShell({
   pageSize,
   pageCount,
 }: Props) {
+  const router = useRouter();
+  const { registerNavigation } = useEmbed();
+  useEffect(() => registerNavigation((href) => {
+    // Paginated routes need new server props when returning to the root list.
+    if (pageNumber > 0) {
+      router.push(stripBasePath(href));
+      return;
+    }
+    window.history.pushState(window.history.state, "", href);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+    window.scrollTo(0, 0);
+  }), [registerNavigation, pageNumber, router]);
 
   const [hydrated, setHydrated] = useState(hasHydratedArchiveShell);
   const [isArchivePostURL, setIsArchivePostURL] = useState(false);
@@ -89,7 +103,7 @@ export function ArchiveShell({
     [archiveConfig.globalTags],
   );
   const sidebarShellRef = useRef<HTMLElement | null>(null);
-  const archiveRootHref = `${siteConfig.basePath || ""}/archives`;
+  const archiveRootHref = `${siteConfig.basePath || ""}/archives/`;
 
 
   const {

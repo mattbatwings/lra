@@ -1,15 +1,37 @@
 @import "tailwindcss";
 
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]):not([data-theme="dark"]), :root:not([data-theme="light"]):not([data-theme="dark"]) *) {
+      @slot;
+    }
+  }
+}
+
 :root {
   --default-border: #e5e7eb;
 }
 
 /* dark theme border color */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --default-border: #374151;
   }
 }
+
+:root[data-theme="dark"] {
+  --default-border: #374151;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-embed-hide-navigation="true"] [data-site-navigation],
+:root[data-embed-hide-footer="true"] footer { display: none; }
+:root[data-embed-compact="true"] main { padding-top: 1rem; padding-bottom: 1rem; }
+:root[data-embed-compact="true"] [data-post-content] { gap: 1rem; }
 
 @layer base {
   *,:before,:after {
@@ -22,6 +44,16 @@
 ::selection {
   background: #cbd5e1;
   color: #0f172a;
+}
+
+.loading-image-spinner {
+  animation: loading-image-spinner-reveal 150ms ease-out 1s forwards;
+}
+
+@keyframes loading-image-spinner-reveal {
+  to {
+    opacity: 1;
+  }
 }
 
 .sidebar-scroll {

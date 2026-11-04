@@ -1,14 +1,25 @@
 'use client';
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { type ChannelRef } from "@/lib/types";
 import { clsx } from "@/lib/utils/classNames";
+
+const AUTHOR_ROW_HEIGHT = 34;
+const AUTHOR_LIST_MAX_HEIGHT = 208;
+
+type AuthorOption = {
+  name: string;
+  norm: string;
+  count: number;
+  selected: boolean;
+};
 
 type Props = {
   channels: ChannelRef[];
   selectedChannels: string[];
   channelCounts: Record<string, number>;
-  authorOptions: Array<{ name: string; norm: string; count: number; selected: boolean }>;
+  authorOptions: AuthorOption[];
   authorQuery: string;
   onToggleChannel(code: string): void;
   onResetFilters(): void;
@@ -16,6 +27,83 @@ type Props = {
   onAuthorQueryChange(val: string): void;
   onClearAuthors(): void;
 };
+
+function VirtualizedAuthorList({
+  authorOptions,
+  onToggleAuthor,
+}: {
+  authorOptions: AuthorOption[];
+  onToggleAuthor(name: string): void;
+}) {
+  const parentRef = useRef<HTMLDivElement | null>(null);
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const virtualizer = useVirtualizer({
+    count: authorOptions.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => AUTHOR_ROW_HEIGHT,
+    overscan: 8,
+  });
+
+  if (!authorOptions.length) {
+    return <div className="px-1 py-2 text-xs text-gray-500 dark:text-gray-400">No authors match.</div>;
+  }
+
+  return (
+    <div
+      ref={parentRef}
+      className="overflow-y-auto"
+      style={{ height: Math.min(authorOptions.length * AUTHOR_ROW_HEIGHT, AUTHOR_LIST_MAX_HEIGHT) }}
+    >
+      <div
+        style={{
+          height: `${virtualizer.getTotalSize()}px`,
+          position: "relative",
+          width: "100%",
+        }}
+      >
+        {virtualizer.getVirtualItems().map((item) => {
+          const author = authorOptions[item.index];
+          return (
+            <div
+              key={author.norm}
+              style={{
+                height: `${item.size}px`,
+                left: 0,
+                position: "absolute",
+                top: 0,
+                transform: `translateY(${item.start}px)`,
+                width: "100%",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => onToggleAuthor(author.name)}
+                className={clsx(
+                  "flex h-[30px] w-full items-center justify-between gap-2 rounded-md px-2 py-1 text-left transition",
+                  author.selected
+                    ? "bg-blue-50 font-semibold text-blue-800 ring-1 ring-blue-200 dark:bg-blue-900/50 dark:text-blue-100 dark:ring-blue-700"
+                    : "hover:bg-gray-50 dark:hover:bg-gray-800/70",
+                )}
+              >
+                <span className="truncate">{author.name}</span>
+                <span
+                  className={clsx(
+                    "rounded-full px-2 text-[10px] font-semibold",
+                    author.selected
+                      ? "bg-blue-100 text-blue-900 dark:bg-blue-800 dark:text-blue-50"
+                      : "bg-black/10 text-gray-700 dark:bg-white/10 dark:text-gray-100",
+                  )}
+                >
+                  {author.count}
+                </span>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export function ArchiveFilters({
   channels,
@@ -176,36 +264,8 @@ export function ArchiveFilters({
             placeholder="Search authors"
             className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
           />
-          <div className="mt-2 max-h-52 space-y-1 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2 text-sm dark:border-gray-800 dark:bg-gray-900">
-            {authorOptions.length ? (
-              authorOptions.map((author) => (
-                <button
-                  key={author.norm}
-                  type="button"
-                  onClick={() => onToggleAuthor(author.name)}
-                  className={clsx(
-                    "flex w-full items-center justify-between gap-2 rounded-md px-2 py-1 text-left transition",
-                    author.selected
-                      ? "bg-blue-50 font-semibold text-blue-800 ring-1 ring-blue-200 dark:bg-blue-900/50 dark:text-blue-100 dark:ring-blue-700"
-                      : "hover:bg-gray-50 dark:hover:bg-gray-800/70",
-                  )}
-                >
-                  <span className="truncate">{author.name}</span>
-                  <span
-                    className={clsx(
-                      "rounded-full px-2 text-[10px] font-semibold",
-                      author.selected
-                        ? "bg-blue-100 text-blue-900 dark:bg-blue-800 dark:text-blue-50"
-                        : "bg-black/10 text-gray-700 dark:bg-white/10 dark:text-gray-100",
-                    )}
-                  >
-                    {author.count}
-                  </span>
-                </button>
-              ))
-            ) : (
-              <div className="px-1 py-2 text-xs text-gray-500 dark:text-gray-400">No authors match.</div>
-            )}
+          <div className="mt-2 rounded-lg border border-gray-200 bg-white p-2 text-sm dark:border-gray-800 dark:bg-gray-900">
+            <VirtualizedAuthorList authorOptions={authorOptions} onToggleAuthor={onToggleAuthor} />
           </div>
         </div>
       </div>

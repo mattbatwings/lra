@@ -44,7 +44,7 @@ export function PillarCard({ pillar }: PillarCardProps) {
       href={pillar.href}
       className="h-full"
       beforePrefetch={() => {
-        if (pillar.href === "/archives") {
+        if (pillar.href === "/archives/") {
           prefetchIndexAndLatestPosts();
         }
       }}

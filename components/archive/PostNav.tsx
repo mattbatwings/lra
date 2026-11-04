@@ -34,7 +34,7 @@ export function PostNav({ prefetch, goHome, resync }: Props) {
     const state = hydrated ? getHistoryState() : null;
 
     if (!state || (!state.lastPostCode && !state.archiveListHref)) {
-      router.push("/archives");
+      router.push("/archives/");
       return;
     }
 
@@ -49,13 +49,13 @@ export function PostNav({ prefetch, goHome, resync }: Props) {
   }
 
   const handleHomeClick = () => {
-    router.push("/archives");
+    router.push("/archives/");
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl items-center justify-between">
+    <div data-site-navigation className="mx-auto flex w-full max-w-4xl items-center justify-between">
       <ForesightPrefetchLink
-        href="/archives"
+        href="/archives/"
         className="rounded-full border px-3 py-1 text-sm transition hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-gray-900"
         onClick={(event) => {
           event.preventDefault();
@@ -94,7 +94,7 @@ export function PostNav({ prefetch, goHome, resync }: Props) {
         {backText}
       </ForesightPrefetchLink>
       <ForesightPrefetchLink
-        href="/archives"
+        href="/archives/"
         className="text-sm text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
         onClick={(event) => {
           event.preventDefault();

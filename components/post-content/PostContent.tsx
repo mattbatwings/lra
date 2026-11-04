@@ -6,10 +6,12 @@ import { RelativeTime } from "../ui/RelativeTime";
 import { fetchCommentsData, fetchDictionaryEntry, prefetchArchiveEntryData } from "@/lib/archive";
 import { getDictionaryIdFromSlug } from "@/lib/dictionary";
 import { getArchiveSlugInfo, getDictionarySlugInfo } from "@/lib/utils/urls";
-import { assetURL, attachmentURL } from "@/lib/github";
+import { assetURL } from "@/lib/github";
+import { useEmbed } from "../embed/EmbedProvider";
+import { embedAttachment, embedPost } from "@/lib/embed/attachments";
 import { type ArchiveListItem } from "@/lib/archive";
 import { disableLiveFetch } from "@/lib/runtimeFlags";
-import { type ArchiveEntryData, type ArchiveComment, type Author, type GlobalTag, type IndexedDictionaryEntry, type Reference, type StyleInfo } from "@/lib/types";
+import { type ArchiveEntryData, type ArchiveComment, type GlobalTag, type IndexedDictionaryEntry, type Reference, type StyleInfo } from "@/lib/types";
 import { siteConfig } from "@/lib/siteConfig";
 import { AuthorsLine, EndorsersLine } from "../ui/Authors";
 import { ChannelBadge } from "../ui/ChannelBadge";
@@ -20,8 +22,9 @@ import { PostAcknowledgements } from "./PostAcknowledgements";
 import { PostAttachmentsSection } from "./PostAttachmentsSection";
 import { PostCommentsSection } from "./PostCommentsSection";
 import { PostPdfModal } from "./PostPdfModal";
+import { PostCsvModal } from "./PostCsvModal";
 import { PostLightbox } from "./PostLightbox";
-import type { LightboxState, PdfPageInfo, PdfViewerState } from "./types";
+import type { CsvViewerState, LightboxState, PdfPageInfo, PdfViewerState } from "./types";
 import { applyTempHistoryState, buildHistoryState, getHistoryState, getTempHistoryState, saveTempHistoryState } from "@/lib/urlState";
 
 type Props = {
@@ -35,11 +38,17 @@ type Props = {
 };
 
 export function PostContent({ post, data, schemaStyles, dictionaryTooltips, globalTags, onLinkClick, preloadImage }: Props) {
+  const { publishPost } = useEmbed();
   const [liveState, setLiveState] = useState<ArchiveEntryData | null>(null);
   const baseData = data;
   const currentData = liveState ? liveState : baseData;
+  useEffect(() => {
+    publishPost({ post: embedPost(post), attachments: (currentData?.attachments ?? []).map((att) => embedAttachment(att, post)), loading: !currentData });
+  }, [post, currentData, publishPost]);
+  useEffect(() => () => publishPost(null), [publishPost]);
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
   const [pdfViewer, setPdfViewer] = useState<PdfViewerState | null>(null);
+  const [csvViewer, setCsvViewer] = useState<CsvViewerState | null>(null);
   const [pdfPageInfo, setPdfPageInfo] = useState<PdfPageInfo>({ page: 1, total: 0 });
   const [activeDictionary, setActiveDictionary] = useState<IndexedDictionaryEntry | null>(null);
   const activeDictionaryRef = useRef<IndexedDictionaryEntry | null>(null);
@@ -49,7 +58,14 @@ export function PostContent({ post, data, schemaStyles, dictionaryTooltips, glob
   const [commentsLoading, setCommentsLoading] = useState(false);
   const numComments = currentData?.num_comments ?? 0;
   const basePath = siteConfig.basePath || "";
-  const expectedPathname = `${basePath}/archives/${encodeURIComponent(post.slug)}`;
+  const expectedPathname = `${basePath}/archives/${encodeURIComponent(post.slug)}/`;
+  const githubEntryPath = `${post.channel.path}/${post.entry.path}`
+    .split("/")
+    .map(encodeURIComponent)
+    .join("/");
+  const githubEntryURL = siteConfig.repositoryUrl
+    ? `${siteConfig.repositoryUrl.replace(/\/+$/, "")}/tree/${encodeURIComponent(siteConfig.archiveRepo.branch)}/${githubEntryPath}#readme`
+    : null;
 
   useEffect(() => {
     if (disableLiveFetch) return;
@@ -283,22 +299,19 @@ export function PostContent({ post, data, schemaStyles, dictionaryTooltips, glob
   })) ?? [];
   const imageAspect = "16/9";
 
-  const attachments = currentData?.attachments?.map((att) => ({
-    ...att,
-    path: att.path ? attachmentURL(post.channel.path, post.entry.path, att) : att.path,
-  })) ?? [];
+  const attachments = currentData?.attachments ?? [];
 
   const updatedAt = currentData?.updatedAt ?? post.entry.updatedAt;
   const archivedAt = currentData?.archivedAt ?? post.entry.archivedAt;
-  const acknowledgements = currentData
-    ? (currentData as { acknowledgements?: Array<Partial<Author> & { reason?: string }> }).acknowledgements || []
-    : [];
+  const explicitAcknowledgements = currentData?.acknowledgements || [];
+  const authorAcknowledgements = currentData?.authors?.filter((author) => author.reason?.trim()) || [];
+  const acknowledgements = [...explicitAcknowledgements, ...authorAcknowledgements];
   const authorReferences = currentData
     ? (currentData as { author_references?: Reference[] }).author_references
     : undefined;
 
   return (
-    <article className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+    <article data-post-content className="mx-auto flex w-full max-w-4xl flex-col gap-6">
       <header className="flex flex-col gap-3 border-b pb-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -355,18 +368,21 @@ export function PostContent({ post, data, schemaStyles, dictionaryTooltips, glob
       />
 
       <PostAttachmentsSection
+        post={post}
         attachments={attachments}
         setLightbox={setLightbox}
         onViewPdf={(pdf) => {
           setPdfPageInfo({ page: 1, total: 0 });
           setPdfViewer(pdf);
         }}
+        onViewCsv={setCsvViewer}
       />
 
       {commentsLoading ? (
         <div className="text-sm text-gray-500">Loading comments...</div>
       ) : comments?.length ? (
         <PostCommentsSection
+          post={post}
           comments={comments}
           channelPath={post.channel.path}
           entryPath={post.entry.path}
@@ -376,18 +392,33 @@ export function PostContent({ post, data, schemaStyles, dictionaryTooltips, glob
             setPdfPageInfo({ page: 1, total: 0 });
             setPdfViewer(pdf);
           }}
+          onViewCsv={setCsvViewer}
         />
       ) : null}
 
-      {currentData?.post?.threadURL ? (
-        <a
-          href={currentData.post.threadURL}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex w-fit items-center gap-2 rounded-full border px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
-        >
-          View Discord Thread
-        </a>
+      {githubEntryURL || currentData?.post?.threadURL ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {githubEntryURL ? (
+            <a
+              href={githubEntryURL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex w-fit items-center gap-2 rounded-full border px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+              View on GitHub
+            </a>
+          ) : null}
+          {currentData?.post?.threadURL ? (
+            <a
+              href={currentData.post.threadURL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex w-fit items-center gap-2 rounded-full border px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+              View Discord Thread
+            </a>
+          ) : null}
+        </div>
       ) : null}
 
       {pdfViewer ? (
@@ -396,6 +427,13 @@ export function PostContent({ post, data, schemaStyles, dictionaryTooltips, glob
           pdfPageInfo={pdfPageInfo}
           onClose={closePdfViewer}
           onPageChange={handlePdfPageChange}
+        />
+      ) : null}
+
+      {csvViewer ? (
+        <PostCsvModal
+          csvViewer={csvViewer}
+          onClose={() => setCsvViewer(null)}
         />
       ) : null}
 

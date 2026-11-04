@@ -1,6 +1,6 @@
 import Image from "next/image";
 import type { Author, Reference } from "@/lib/types";
-import { getAuthorName } from "@/lib/utils/authors";
+import { getAuthorIconURL, getAuthorName } from "@/lib/utils/authors";
 import { transformOutputWithReferencesForWebsite } from "@/lib/utils/references";
 import { MarkdownText } from "../ui/LinkHelpers";
 
@@ -22,45 +22,41 @@ export function PostAcknowledgements({
   return (
     <div>
       <h4 className="mb-2 text-xl font-semibold tracking-wide text-gray-600 dark:text-gray-300">Acknowledgements</h4>
-      <ul className="space-y-3">
+      <ul className="space-y-2 text-sm">
         {acknowledgements.map((a, i) => {
+          const author = a as Author;
           const decorated = transformOutputWithReferencesForWebsite(
             a.reason || "",
             authorReferences || [],
             (id) => dictionaryTooltips?.[id],
           );
-          const name = getAuthorName(a as Author);
+          const name = getAuthorName(author);
+          const iconURL = getAuthorIconURL(author);
           const handle = a.username && a.username !== name ? a.username : null;
-          const initial = name.trim().charAt(0).toUpperCase() || "?";
-          const iconURL = (a as { iconURL?: string }).iconURL;
           const url = (a as { url?: string }).url;
           return (
-            <li key={i} className="flex gap-3 rounded-xl border p-3 dark:border-gray-800">
-              <div className="shrink-0">
+            <li key={i} className="grid gap-2 sm:grid-cols-[max-content_1fr] sm:items-start sm:gap-4">
+              <div className="flex min-w-0 items-center gap-2 font-medium text-gray-900 dark:text-gray-100">
                 {iconURL ? (
-                  <Image src={iconURL} alt={name} className="h-10 w-10 rounded-full object-cover" width={40} height={40} unoptimized />
+                  <Image src={iconURL} alt="" className="h-6 w-6 rounded-full object-cover" width={24} height={24} unoptimized />
                 ) : (
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-sm font-semibold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-                    {initial}
+                  <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                    {name.trim().charAt(0).toUpperCase() || "?"}
                   </span>
                 )}
+                <span className="whitespace-nowrap">
+                  {url ? (
+                    <a href={url} target="_blank" rel="noreferrer" className="hover:underline">
+                      {name}
+                    </a>
+                  ) : (
+                    name
+                  )}
+                </span>
+                {handle ? <span className="shrink-0 text-xs font-normal text-gray-500">@{handle}</span> : null}
               </div>
-              <div className="min-w-0 space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    {url ? (
-                      <a href={url} target="_blank" rel="noreferrer" className="hover:underline">
-                        {name}
-                      </a>
-                    ) : (
-                      name
-                    )}
-                  </span>
-                  {handle ? <span className="text-xs text-gray-500">@{handle}</span> : null}
-                </div>
-                <div className="text-sm text-gray-700 dark:text-gray-300">
-                  <MarkdownText text={decorated} onLinkClick={onLinkClick} />
-                </div>
+              <div className="min-w-0 text-gray-700 dark:text-gray-300">
+                <MarkdownText text={decorated} onLinkClick={onLinkClick} />
               </div>
             </li>
           );

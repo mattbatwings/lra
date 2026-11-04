@@ -14,6 +14,31 @@ import type { IndexedDictionaryEntry, Reference, StyleInfo, SubmissionRecords } 
 import { ForesightPrefetchLink } from "@/components/ui/ForesightPrefetchLink";
 
 type LinkWithTooltipProps = React.ComponentProps<"a">
+
+function isInternalHref(href?: string) {
+  if (!href) return false;
+  if (/^(?:https?:|mailto:|tel:|\/\/)/i.test(href)) {
+    if (typeof window === "undefined" || !/^https?:/i.test(href)) return false;
+    try {
+      return new URL(href, window.location.href).origin === window.location.origin;
+    } catch {
+      return false;
+    }
+  }
+  return true;
+}
+
+function isDictionaryHref(href?: string) {
+  if (!href || !isInternalHref(href)) return false;
+  try {
+    const url = new URL(href, typeof window === "undefined" ? "https://archive.local/" : window.location.href);
+    const { slug, isDictionaryRoot } = getDictionarySlugInfo(url);
+    return isDictionaryRoot || !!slug || url.searchParams.has("did");
+  } catch {
+    return false;
+  }
+}
+
 function linkTargetForHref(href?: string) {
   if (!href) return undefined;
   if (typeof window === "undefined") {
@@ -68,7 +93,11 @@ export function LinkWithTooltip({ title, children, className, onClick, href, ...
     }
   };
 
-  const onPrefetch = () => {
+  const onPrefetch = (event: { cancel: () => void }) => {
+    if (!isInternalHref(href)) {
+      event.cancel();
+      return;
+    }
     prefetchDictionaryForHref();
     prefetchArchiveForHref();
   };
@@ -79,7 +108,17 @@ export function LinkWithTooltip({ title, children, className, onClick, href, ...
     </span>
   ) : null;
 
-  const linkClassName = clsx("underline", className);
+  const linkClassName = clsx(
+    "underline underline-offset-2",
+    href
+      ? isDictionaryHref(href)
+        ? undefined
+        : isInternalHref(href)
+        ? "text-emerald-700 hover:text-emerald-800 dark:text-emerald-300 dark:hover:text-emerald-200"
+        : "text-sky-800 hover:text-sky-900 dark:text-sky-300 dark:hover:text-sky-200"
+      : undefined,
+    className,
+  );
 
   return (
     <span className="group relative inline-block">
@@ -157,7 +196,7 @@ export function DictionaryCard({ entry, onOpen, aiScore }: { entry: IndexedDicti
   const primary = entry.index.terms[0] || entry.index.id;
   const extraCount = Math.max(0, (entry.index.terms?.length || 0) - 1);
   const slug = buildDictionarySlug(entry.index);
-  const href = `/dictionary/${encodeURIComponent(slug)}`;
+  const href = `/dictionary/${encodeURIComponent(slug)}/`;
   return (
     <Link
       href={href}

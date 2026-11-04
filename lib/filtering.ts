@@ -86,7 +86,7 @@ export const filterPosts = (posts: ArchiveListItem[], params: FilterPostsParams)
 
   if (selectedChannels.length) {
     const set = new Set(selectedChannels);
-    list = list.filter((p) => set.has(p.channel.code) || set.has(p.channel.name));
+    list = list.filter((p) => set.has(p.channel.code));
   }
 
   if (includeTags.length || excludeTags.length) {
